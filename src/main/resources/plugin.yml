@@ -1,0 +1,21 @@
+name: AutoFarmRegions
+version: '${project.version}'
+main: com.example.autofarmregions.AutoFarmRegions
+api-version: '1.21'
+depend: [WorldGuard]
+description: Automatic farming system for WorldGuard regions
+
+commands:
+  autofarm:
+    description: Main command for AutoFarmRegions
+    usage: /<command> [reload|list|add|remove]
+    aliases: [afr]
+    permission: autofarmregions.admin
+
+permissions:
+  autofarmregions.admin:
+    description: Allows access to all AutoFarmRegions commands
+    default: op
+  autofarmregions.use:
+    description: Allows using basic AutoFarmRegions features
+    default: true 

@@ -1,0 +1,25 @@
+# AutoFarmRegions Messages
+# All messages support MiniMessage formatting: https://docs.advntr.dev/minimessage/format.html
+
+# Command Messages
+no-permission: "<red>You don't have permission to use this command!"
+
+# Region Messages
+region-added: "<green>Region has been added to auto-farm!"
+region-removed: "<green>Region has been removed from auto-farm!"
+region-not-found: "<red>Region not found!"
+region-already-enabled: "<red>Region is already enabled!"
+region-not-enabled-command: "<red>Region is not enabled!"
+no-regions-enabled: "<red>No regions are currently enabled for auto-farm!"
+regions-list: |
+  <gradient:gold:yellow>Enabled Regions</gradient>
+
+# Protection Messages
+crop-immature: "<red>This crop is not fully grown yet!"
+tool-required: "<red>You need a hoe to break this crop!"
+region-not-enabled: "<red>This region is not enabled for auto-farm!"
+
+# Inventory Messages
+inventory-full-title: "<red>Inventory Full!"
+inventory-full-subtitle: "<gray>Items will be dropped on the ground"
+inventory-full-action-bar: "<red>Your inventory is full! Items will be dropped on the ground" 
