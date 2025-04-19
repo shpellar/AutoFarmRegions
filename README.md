@@ -36,6 +36,9 @@ The plugin's configuration file (`config.yml`) allows you to:
 
 ### Example Configuration
 
+<details>
+<summary>Click to expand configuration example</summary>
+
 ```yaml
 # AutoFarmRegions Configuration
 
@@ -91,6 +94,7 @@ protection:
   - DIAMOND_HOE
   - NETHERITE_HOE
 ```
+</details>
 
 ## Commands
 
