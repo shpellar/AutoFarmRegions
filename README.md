@@ -15,7 +15,6 @@ A Minecraft plugin that adds automatic farming functionality to WorldGuard regio
 
 ## Requirements
 
-- Minecraft 1.21.4
 - WorldGuard
 - Java 17 or higher
 
@@ -107,12 +106,6 @@ protection:
 ## Permissions
 
 - `autofarmregions.admin` - Access to all plugin commands
-
-## Building from Source
-
-1. Clone the repository
-2. Run `mvn clean package`
-3. The compiled JAR will be in the `target` directory
 
 ## License
 
