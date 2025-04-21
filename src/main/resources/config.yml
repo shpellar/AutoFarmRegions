@@ -1,51 +1,70 @@
 # AutoFarmRegions Configuration
+# Version: 1.1
+# Support: https://discord.primalmc.fun
+#
+# This plugin automates farming tasks within WorldGuard regions.
+# For help and support, join our Discord server: https://discord.primalmc.fun
 
-# List of enabled WorldGuard regions where automatic farming will work
+# List of WorldGuard region names where auto-farming is enabled
+# Example: enabled-regions: [farm1, farm2, wheat-farm]
 enabled-regions: []
 
 # Auto-replant settings
 auto-replant:
-  # Whether to automatically replant crops when harvested
+  # Enable or disable automatic replanting of crops
   enabled: true
-  # Whether to add drops directly to inventory
+  
+  # If true, crop drops will be added directly to the player's inventory
+  # If false, drops will be dropped on the ground
   add-to-inventory: true
-  # Whether to drop items on the ground if inventory is full
+  
+  # If true and inventory is full, drops will be dropped on the ground
+  # If false and inventory is full, drops will be lost
   drop-if-full: false
-  # Inventory full notification settings
+  
+  # Settings for inventory full notifications
   inventory-full-notification:
-    # Show a title when inventory is full
+    # Show a title message when inventory is full
     show-title: false
-    # Show action bar when inventory is full
+    
+    # Show an action bar message when inventory is full
     show-action-bar: true
-    # Duration of title in ticks (20 ticks = 1 second)
+    
+    # Duration of the title message in ticks (20 ticks = 1 second)
     title-duration: 40
 
-# Crop growth settings
+# Automatic crop growth settings
 growth:
-  # Whether to enable growth in regions
+  # Enable or disable automatic crop growth
   enabled: true
-  # How often to start a new growth chain (in seconds)
+  
+  # Time in seconds for crops to grow to maturity
   interval: 60
-  # How long to wait between each crop in the chain (in ticks, 20 ticks = 1 second)
-  chain-delay: 2
-  # Whether to show particles when crops grow
+  
+  # Show particle effects when crops grow
   show-particles: true
-  # Which particle to show when crops grow
+  
+  # Particle type to show when crops grow
+  # Available particles: https://hub.spigotmc.org/javadocs/spigot/org/bukkit/Particle.html
   particle: VILLAGER_HAPPY
 
 # Crop protection settings
 protection:
-  # Whether to prevent breaking immature crops
+  # Prevent players from breaking immature crops
   prevent-immature-break: true
-  # Whether to show a message when breaking immature crops
+  
+  # Show a message when players try to break immature crops
   show-immature-message: false
-  # Whether to allow breaking crops with specific tools
+  
+  # Require specific tools to break crops
   require-tools: false
-  # List of tools that can break crops (if require-tools is true)
+  
+  # List of tools that can be used to break crops
+  # Only used if require-tools is true
   allowed-tools:
-  - WOODEN_HOE
-  - STONE_HOE
-  - IRON_HOE
-  - GOLDEN_HOE
-  - DIAMOND_HOE
-  - NETHERITE_HOE 
+    - WOODEN_HOE
+    - STONE_HOE
+    - IRON_HOE
+    - GOLDEN_HOE
+    - DIAMOND_HOE
+    - NETHERITE_HOE 

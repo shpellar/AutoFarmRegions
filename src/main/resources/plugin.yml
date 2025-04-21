@@ -1,21 +1,23 @@
 name: AutoFarmRegions
 version: '${project.version}'
 main: com.example.autofarmregions.AutoFarmRegions
-api-version: '1.21'
+api-version: '1.19'
 depend: [WorldGuard]
-description: Automatic farming system for WorldGuard regions
+description: |
+  Automates farming tasks within WorldGuard regions.
+  Support: https://discord.primalmc.fun
 
 commands:
-  autofarm:
+  autofarmregions:
     description: Main command for AutoFarmRegions
-    usage: /<command> [reload|list|add|remove]
+    usage: /<command> [reload|addregion|listregions]
     aliases: [afr]
     permission: autofarmregions.admin
 
 permissions:
   autofarmregions.admin:
-    description: Allows access to all AutoFarmRegions commands
+    description: Allows access to all AutoFarmRegions admin commands
     default: op
   autofarmregions.use:
-    description: Allows using basic AutoFarmRegions features
+    description: Allows players to use auto-farming features
     default: true 

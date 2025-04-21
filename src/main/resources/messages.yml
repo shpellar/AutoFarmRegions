@@ -1,25 +1,36 @@
 # AutoFarmRegions Messages
-# All messages support MiniMessage formatting: https://docs.advntr.dev/minimessage/format.html
+# Version: 1.1
+# Support: https://discord.primalmc.fun
+#
+# All messages support color codes using the & symbol
+# Example: &c for red, &a for green, &e for yellow
+# For help and support, join our Discord server: https://discord.primalmc.fun
 
-# Command Messages
-no-permission: "<red>You don't have permission to use this command!"
+# Message shown when player's inventory is full
+inventory-full: "&cYour inventory is full!"
 
-# Region Messages
-region-added: "<green>Region has been added to auto-farm!"
-region-removed: "<green>Region has been removed from auto-farm!"
-region-not-found: "<red>Region not found!"
-region-already-enabled: "<red>Region is already enabled!"
-region-not-enabled-command: "<red>Region is not enabled!"
-no-regions-enabled: "<red>No regions are currently enabled for auto-farm!"
-regions-list: |
-  <gradient:gold:yellow>Enabled Regions</gradient>
+# Message shown when trying to break immature crops
+immature-crop: "&cYou cannot break immature crops!"
 
-# Protection Messages
-crop-immature: "<red>This crop is not fully grown yet!"
-tool-required: "<red>You need a hoe to break this crop!"
-region-not-enabled: "<red>This region is not enabled for auto-farm!"
+# Message shown when a region is added to auto-farming
+# %region% will be replaced with the region name
+region-added: "&aRegion &e%region% &ahas been added to AutoFarmRegions!"
 
-# Inventory Messages
-inventory-full-title: "<red>Inventory Full!"
-inventory-full-subtitle: "<gray>Items will be dropped on the ground"
-inventory-full-action-bar: "<red>Your inventory is full! Items will be dropped on the ground" 
+# Message shown when a region is removed from auto-farming
+# %region% will be replaced with the region name
+region-removed: "&aRegion &e%region% &ahas been removed from AutoFarmRegions!"
+
+# Message shown when configuration is reloaded
+reload-success: "&aConfiguration reloaded successfully!"
+
+# Message shown when a player doesn't have permission
+no-permission: "&cYou don't have permission to use this command!"
+
+# Message shown when the specified region doesn't exist
+invalid-region: "&cThe specified region does not exist!"
+
+# Message shown when trying to add an already enabled region
+region-already-enabled: "&cThis region is already enabled!"
+
+# Message shown when trying to remove a region that isn't enabled
+region-not-enabled: "&cThis region is not enabled!" 

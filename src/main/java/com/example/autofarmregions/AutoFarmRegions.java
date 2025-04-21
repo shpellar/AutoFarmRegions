@@ -1,179 +1,250 @@
 package com.example.autofarmregions;
 
+import com.comphenix.protocol.PacketType;
+import com.comphenix.protocol.ProtocolLibrary;
+import com.comphenix.protocol.ProtocolManager;
+import com.comphenix.protocol.events.PacketContainer;
+import com.comphenix.protocol.wrappers.WrappedChatComponent;
 import com.sk89q.worldedit.bukkit.BukkitAdapter;
 import com.sk89q.worldguard.WorldGuard;
 import com.sk89q.worldguard.protection.managers.RegionManager;
 import com.sk89q.worldguard.protection.regions.ProtectedRegion;
-import net.kyori.adventure.platform.bukkit.BukkitAudiences;
-import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.bukkit.Bukkit;
-import org.bukkit.command.Command;
-import org.bukkit.command.CommandSender;
-import org.bukkit.command.TabCompleter;
+import org.bukkit.ChatColor;
+import org.bukkit.Material;
+import org.bukkit.Particle;
+import org.bukkit.block.Block;
+import org.bukkit.block.data.Ageable;
+import org.bukkit.configuration.file.FileConfiguration;
+import org.bukkit.configuration.file.YamlConfiguration;
+import org.bukkit.entity.Player;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.Listener;
+import org.bukkit.event.block.BlockBreakEvent;
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.scheduler.BukkitRunnable;
 
+import java.io.File;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
-import java.util.stream.Collectors;
+import java.util.Map;
+import java.util.HashMap;
 
-public class AutoFarmRegions extends JavaPlugin implements TabCompleter {
-    private static AutoFarmRegions instance;
-    private Config config;
-    private RegionManager regionManager;
-    private final List<String> enabledRegions = new ArrayList<>();
-    private final MiniMessage miniMessage = MiniMessage.miniMessage();
-    private BukkitAudiences adventure;
-    private static final List<String> COMMANDS = Arrays.asList("reload", "list", "add", "remove");
-    private FarmListener farmListener;
+public class AutoFarmRegions extends JavaPlugin implements Listener {
+    private FileConfiguration config;
+    private FileConfiguration messages;
+    private List<String> enabledRegions;
+    private Map<Block, BukkitRunnable> regrowthTasks;
+    private WorldGuard worldGuard;
+    private ProtocolManager protocolManager;
 
     @Override
     public void onEnable() {
-        instance = this;
-        config = new Config(this);
-        config.loadConfig();
-        adventure = BukkitAudiences.create(this);
+        // Initialize WorldGuard
+        worldGuard = WorldGuard.getInstance();
+        protocolManager = ProtocolLibrary.getProtocolManager();
         
-        // Register event listener
-        farmListener = new FarmListener(this);
-        getServer().getPluginManager().registerEvents(farmListener, this);
-        
-        // Initialize region manager and load enabled regions
-        regionManager = WorldGuard.getInstance().getPlatform().getRegionContainer().get(BukkitAdapter.adapt(Bukkit.getWorlds().get(0)));
-        enabledRegions.addAll(getConfig().getStringList("enabled-regions"));
-        
-        // Register tab completer
-        getCommand("autofarm").setTabCompleter(this);
-        
+        // Load configurations
+        saveDefaultConfig();
+        config = getConfig();
+        loadMessages();
+        enabledRegions = config.getStringList("enabled-regions");
+        regrowthTasks = new HashMap<>();
+
+        // Register events and commands
+        getServer().getPluginManager().registerEvents(this, this);
+        getCommand("autofarmregions").setExecutor(new AutoFarmRegionsCommand(this));
+
         getLogger().info("AutoFarmRegions has been enabled!");
+    }
+
+    private void loadMessages() {
+        File messagesFile = new File(getDataFolder(), "messages.yml");
+        if (!messagesFile.exists()) {
+            saveResource("messages.yml", false);
+        }
+        messages = YamlConfiguration.loadConfiguration(messagesFile);
     }
 
     @Override
     public void onDisable() {
-        if (farmListener != null) {
-            farmListener.cleanup();
+        // Cancel all regrowth tasks
+        for (BukkitRunnable task : regrowthTasks.values()) {
+            task.cancel();
         }
-        if (adventure != null) {
-            adventure.close();
-            adventure = null;
-        }
+        regrowthTasks.clear();
+        
         getLogger().info("AutoFarmRegions has been disabled!");
     }
 
-    @Override
-    public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
-        if (!sender.hasPermission("autofarmregions.admin")) {
-            return new ArrayList<>();
-        }
-
-        if (args.length == 1) {
-            return COMMANDS.stream()
-                    .filter(cmd -> cmd.startsWith(args[0].toLowerCase()))
-                    .collect(Collectors.toList());
-        }
-
-        return new ArrayList<>();
+    public void reloadConfiguration() {
+        reloadConfig();
+        config = getConfig();
+        loadMessages();
+        enabledRegions = config.getStringList("enabled-regions");
     }
 
-    @Override
-    public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
-        if (!sender.hasPermission("autofarmregions.admin")) {
-            adventure.sender(sender).sendMessage(miniMessage.deserialize(config.getNoPermissionMessage()));
-            return true;
-        }
+    public String getMessage(String key) {
+        return messages.getString(key);
+    }
 
-        if (args.length == 0) {
-            adventure.sender(sender).sendMessage(miniMessage.deserialize(config.getHelpMessage()));
-            return true;
+    public boolean addRegion(String regionName) {
+        if (enabledRegions.contains(regionName)) {
+            return false;
         }
-
-        switch (args[0].toLowerCase()) {
-            case "reload":
-                config.loadConfig();
-                enabledRegions.clear();
-                enabledRegions.addAll(getConfig().getStringList("enabled-regions"));
-                adventure.sender(sender).sendMessage(miniMessage.deserialize(config.getReloadMessage()));
-                break;
-            case "list":
-                listRegions(sender);
-                break;
-            case "add":
-                if (args.length < 2) {
-                    adventure.sender(sender).sendMessage(miniMessage.deserialize(config.getAddRegionUsageMessage()));
-                    return true;
-                }
-                addRegion(args[1], sender);
-                break;
-            case "remove":
-                if (args.length < 2) {
-                    adventure.sender(sender).sendMessage(miniMessage.deserialize(config.getRemoveRegionUsageMessage()));
-                    return true;
-                }
-                removeRegion(args[1], sender);
-                break;
-            default:
-                adventure.sender(sender).sendMessage(miniMessage.deserialize(config.getHelpMessage()));
-        }
+        enabledRegions.add(regionName);
+        config.set("enabled-regions", enabledRegions);
+        saveConfig();
         return true;
     }
 
-    private void listRegions(CommandSender sender) {
-        if (enabledRegions.isEmpty()) {
-            adventure.sender(sender).sendMessage(miniMessage.deserialize(config.getNoRegionsMessage()));
-            return;
-        }
-        
-        StringBuilder message = new StringBuilder(config.getListRegionsHeader());
-        for (String region : enabledRegions) {
-            message.append("\n- ").append(region);
-        }
-        adventure.sender(sender).sendMessage(miniMessage.deserialize(message.toString()));
-    }
-
-    private void addRegion(String regionName, CommandSender sender) {
-        if (enabledRegions.contains(regionName)) {
-            adventure.sender(sender).sendMessage(miniMessage.deserialize(config.getRegionAlreadyEnabledMessage()));
-            return;
-        }
-
-        enabledRegions.add(regionName);
-        getConfig().set("enabled-regions", enabledRegions);
-        saveConfig();
-        adventure.sender(sender).sendMessage(miniMessage.deserialize(config.getRegionAddedMessage()));
-    }
-
-    private void removeRegion(String regionName, CommandSender sender) {
-        if (!enabledRegions.contains(regionName)) {
-            adventure.sender(sender).sendMessage(miniMessage.deserialize(config.getRegionNotEnabledMessage()));
-            return;
-        }
-
-        enabledRegions.remove(regionName);
-        getConfig().set("enabled-regions", enabledRegions);
-        saveConfig();
-        adventure.sender(sender).sendMessage(miniMessage.deserialize(config.getRegionRemovedMessage()));
-    }
-
-    public static AutoFarmRegions getInstance() {
-        return instance;
-    }
-
-    public Config getPluginConfig() {
-        return config;
-    }
-
     public List<String> getEnabledRegions() {
-        return enabledRegions;
+        return new ArrayList<>(enabledRegions);
     }
 
-    public boolean isRegionEnabled(String regionName) {
-        return enabledRegions.contains(regionName);
-    }
+    @EventHandler
+    public void onBlockBreak(BlockBreakEvent event) {
+        Block block = event.getBlock();
+        Player player = event.getPlayer();
 
-    public BukkitAudiences getAdventure() {
-        if (adventure == null) {
-            throw new IllegalStateException("Tried to access Adventure when the plugin was disabled!");
+        // Check if the block is in an enabled region
+        if (!isInEnabledRegion(block)) {
+            return;
         }
-        return adventure;
+
+        // Check if the block is a crop
+        if (!isCrop(block.getType())) {
+            return;
+        }
+
+        // Check if the crop is mature
+        Ageable ageable = (Ageable) block.getBlockData();
+        if (config.getBoolean("protection.prevent-immature-break") && ageable.getAge() != ageable.getMaximumAge()) {
+            event.setCancelled(true);
+            if (config.getBoolean("protection.show-immature-message")) {
+                player.sendMessage(ChatColor.translateAlternateColorCodes('&', getMessage("immature-crop")));
+            }
+            return;
+        }
+
+        // Check if tool is required and valid
+        if (config.getBoolean("protection.require-tools")) {
+            ItemStack tool = player.getInventory().getItemInMainHand();
+            if (tool == null || !config.getStringList("protection.allowed-tools").contains(tool.getType().name())) {
+                event.setCancelled(true);
+                return;
+            }
+        }
+
+        // Handle auto-replanting
+        if (config.getBoolean("auto-replant.enabled")) {
+            event.setDropItems(false);
+            Material cropType = block.getType();
+            
+            // Add drops to inventory or drop them
+            for (ItemStack drop : block.getDrops()) {
+                if (config.getBoolean("auto-replant.add-to-inventory")) {
+                    Map<Integer, ItemStack> remaining = player.getInventory().addItem(drop);
+                    if (!remaining.isEmpty() && config.getBoolean("auto-replant.drop-if-full")) {
+                        for (ItemStack item : remaining.values()) {
+                            block.getWorld().dropItemNaturally(block.getLocation(), item);
+                        }
+                    } else if (!remaining.isEmpty()) {
+                        showInventoryFullNotification(player);
+                    }
+                } else {
+                    block.getWorld().dropItemNaturally(block.getLocation(), drop);
+                }
+            }
+
+            // Schedule the replanting for the next tick to ensure the block is broken first
+            Bukkit.getScheduler().runTask(this, () -> {
+                // Replant the crop
+                block.setType(cropType);
+                Ageable newAgeable = (Ageable) block.getBlockData();
+                newAgeable.setAge(0);
+                block.setBlockData(newAgeable);
+
+                // Schedule regrowth
+                if (config.getBoolean("growth.enabled")) {
+                    scheduleRegrowth(block, cropType);
+                }
+            });
+        }
+    }
+
+    private boolean isInEnabledRegion(Block block) {
+        RegionManager regions = worldGuard.getPlatform().getRegionContainer().get(BukkitAdapter.adapt(block.getWorld()));
+        if (regions == null) return false;
+
+        for (String regionName : enabledRegions) {
+            ProtectedRegion region = regions.getRegion(regionName);
+            if (region != null && region.contains(block.getX(), block.getY(), block.getZ())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean isCrop(Material material) {
+        return material == Material.WHEAT ||
+               material == Material.CARROTS ||
+               material == Material.POTATOES ||
+               material == Material.BEETROOTS ||
+               material == Material.NETHER_WART;
+    }
+
+    private void scheduleRegrowth(Block block, Material cropType) {
+        // Cancel existing task if any
+        if (regrowthTasks.containsKey(block)) {
+            regrowthTasks.get(block).cancel();
+            regrowthTasks.remove(block);
+        }
+
+        BukkitRunnable task = new BukkitRunnable() {
+            @Override
+            public void run() {
+                block.setType(cropType);
+                Ageable ageable = (Ageable) block.getBlockData();
+                ageable.setAge(ageable.getMaximumAge());
+                block.setBlockData(ageable);
+
+                if (config.getBoolean("growth.show-particles")) {
+                    Particle particle = Particle.valueOf(config.getString("growth.particle"));
+                    block.getWorld().spawnParticle(particle, block.getLocation().add(0.5, 0.5, 0.5), 10, 0.3, 0.3, 0.3, 0);
+                }
+
+                regrowthTasks.remove(block);
+            }
+        };
+
+        task.runTaskLater(this, config.getInt("growth.interval") * 20L);
+        regrowthTasks.put(block, task);
+    }
+
+    private void showInventoryFullNotification(Player player) {
+        if (config.getBoolean("auto-replant.inventory-full-notification.show-title")) {
+            player.sendTitle(
+                ChatColor.translateAlternateColorCodes('&', getMessage("inventory-full")),
+                "",
+                10,
+                config.getInt("auto-replant.inventory-full-notification.title-duration"),
+                10
+            );
+        }
+        if (config.getBoolean("auto-replant.inventory-full-notification.show-action-bar")) {
+            sendActionBar(player, ChatColor.translateAlternateColorCodes('&', getMessage("inventory-full")));
+        }
+    }
+
+    private void sendActionBar(Player player, String message) {
+        PacketContainer chatPacket = protocolManager.createPacket(PacketType.Play.Server.SET_ACTION_BAR_TEXT);
+        chatPacket.getChatComponents().write(0, WrappedChatComponent.fromText(message));
+        try {
+            protocolManager.sendServerPacket(player, chatPacket);
+        } catch (Exception e) {
+            getLogger().warning("Failed to send action bar message: " + e.getMessage());
+        }
     }
 } 
