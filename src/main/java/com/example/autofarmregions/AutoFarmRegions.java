@@ -24,6 +24,7 @@ import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
+import org.bstats.bukkit.Metrics;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -56,6 +57,8 @@ public class AutoFarmRegions extends JavaPlugin implements Listener {
         getServer().getPluginManager().registerEvents(this, this);
         getCommand("autofarmregions").setExecutor(new AutoFarmRegionsCommand(this));
 
+        // Initialize bStats
+        new Metrics(this, 25602);
         getLogger().info("AutoFarmRegions has been enabled!");
     }
 
