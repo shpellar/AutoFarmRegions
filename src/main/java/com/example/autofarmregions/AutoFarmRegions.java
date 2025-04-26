@@ -33,15 +33,19 @@ import java.util.Map;
 import java.util.HashMap;
 
 public class AutoFarmRegions extends JavaPlugin implements Listener {
+    private static AutoFarmRegions instance;
     private FileConfiguration config;
     private FileConfiguration messages;
     private List<String> enabledRegions;
     private Map<Block, BukkitRunnable> regrowthTasks;
     private WorldGuard worldGuard;
     private ProtocolManager protocolManager;
+    private UpdateChecker updateChecker;
 
     @Override
     public void onEnable() {
+        instance = this;
+        
         // Initialize WorldGuard
         worldGuard = WorldGuard.getInstance();
         protocolManager = ProtocolLibrary.getProtocolManager();
@@ -59,6 +63,11 @@ public class AutoFarmRegions extends JavaPlugin implements Listener {
 
         // Initialize bStats
         new Metrics(this, 25602);
+
+        // Initialize update checker
+        updateChecker = new UpdateChecker(this);
+        updateChecker.checkForUpdates();
+
         getLogger().info("AutoFarmRegions has been enabled!");
     }
 
@@ -249,5 +258,9 @@ public class AutoFarmRegions extends JavaPlugin implements Listener {
         } catch (Exception e) {
             getLogger().warning("Failed to send action bar message: " + e.getMessage());
         }
+    }
+
+    public static AutoFarmRegions getInstance() {
+        return instance;
     }
 } 
